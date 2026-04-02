@@ -798,18 +798,62 @@ const SUPABASE_URL = 'https://vvntsdkmksfneehaxhhb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2bnRzZGtta3NmbmVlaGF4aGhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNTk5NDQsImV4cCI6MjA5MDczNTk0NH0.g2vuTENQIZyzROXbOZLHmXGje7tKAFB068fROc14d68';
 let db = null;
  
+async function testSupabaseConnection() {
+  // Direct REST call — bypasses the JS client entirely to isolate the issue
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/entries?limit=1', {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    const text = await res.text();
+    console.log('Direct REST test — status:', res.status, 'body:', text);
+    if(res.status === 200) {
+      notify('Supabase connection OK', '');
+    } else if(res.status === 404) {
+      notify('Table "entries" not found — run the SQL setup script', 'error');
+      setSyncStatus('error');
+    } else if(res.status === 401 || res.status === 403) {
+      notify('Supabase auth error — check your API key or disable RLS', 'error');
+      setSyncStatus('error');
+    } else {
+      notify('Supabase error ' + res.status + ': ' + text, 'error');
+      setSyncStatus('error');
+    }
+  } catch(e) {
+    console.error('Direct REST test failed:', e);
+    notify('Cannot reach Supabase: ' + e.message, 'error');
+    setSyncStatus('error');
+  }
+}
+ 
 function initSupabase() {
   try {
-    // UMD bundle exposes supabase.createClient directly
     const client = (window.supabase && window.supabase.createClient)
       ? window.supabase.createClient
-      : (window.supabaseJs && window.supabaseJs.createClient)
-      ? window.supabaseJs.createClient
       : null;
     if(!client) throw new Error('Supabase library not found on window');
+ 
+    // Use a plain fetch wrapper that returns a simple Response-like object
+    // to avoid the Headers.clone postMessage error in sandboxed environments
+    const safeFetch = async (url, opts = {}) => {
+      const plainHeaders = {};
+      if(opts.headers) {
+        const h = opts.headers;
+        if(typeof h.forEach === 'function') {
+          h.forEach((v, k) => { plainHeaders[k] = v; });
+        } else {
+          Object.assign(plainHeaders, h);
+        }
+      }
+      return fetch(url, { ...opts, headers: plainHeaders });
+    };
+ 
     db = client(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false },  // avoids localStorage auth cloning issues
-      global: { fetch: fetch.bind(globalThis) }
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { fetch: safeFetch }
     });
     console.log('Supabase client initialized OK');
     return true;
@@ -911,9 +955,10 @@ async function loadData() {
     }
     setSyncStatus('ok');
   } catch(e) {
-    console.error('Supabase load error:', e);
+    const errMsg = e?.message || e?.error_description || JSON.stringify(e);
+    console.error('Supabase load error full:', JSON.stringify(e), e);
     setSyncStatus('error');
-    notify('Sync error: ' + e.message, 'error');
+    notify('Sync error: ' + errMsg, 'error');
   }
   return entries;
 }
@@ -935,9 +980,10 @@ async function upsertEntry(entry) {
     if(error) throw error;
     setSyncStatus('ok');
   } catch(e) {
-    console.error('Supabase upsert error:', e);
+    const errMsg2 = e?.message || e?.error_description || e?.details || JSON.stringify(e);
+    console.error('Supabase upsert error full:', JSON.stringify(e), e);
     setSyncStatus('error');
-    notify('Sync error: ' + e.message, 'error');
+    notify('Sync error: ' + errMsg2, 'error');
   }
 }
  
@@ -1711,9 +1757,18 @@ if('serviceWorker' in navigator && location.protocol !== 'file:') {
 // ── INIT ──
 initSupabase();
 setSyncStatus('syncing');
-loadData().then(() => {
+// Skip connectivity test in sandboxed/iframe environments
+// Full sync will work on GitHub Pages (http/https)
+if(location.protocol === 'file:' || location.origin === 'null') {
+  console.warn('Running in local/sandboxed context — Supabase sync disabled. Upload to GitHub Pages to enable sync.');
+  setSyncStatus('offline');
+  entries = localLoad();
   renderSummary();
-});
+} else {
+  loadData().then(() => {
+    renderSummary();
+  });
+}
 </script>
 </body>
 </html>
