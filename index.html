@@ -29,7 +29,7 @@
   tryLoad();
 })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
 <style>
 :root {
   --bg-deep: #040810;
@@ -53,9 +53,9 @@
   --row-selected: rgba(245,166,35,0.08);
   --shadow: 0 4px 24px rgba(0,0,0,0.6);
 }
- 
+
 * { margin:0; padding:0; box-sizing:border-box; }
- 
+
 html, body {
   height: 100%;
   background: var(--bg-deep);
@@ -64,7 +64,7 @@ html, body {
   font-size: 13px;
   overflow: hidden;
 }
- 
+
 /* ── HEADER ── */
 #app-header {
   display: flex;
@@ -78,7 +78,7 @@ html, body {
   z-index: 100;
   flex-shrink: 0;
 }
- 
+
 .logo {
   font-family: 'Orbitron', monospace;
   font-weight: 900;
@@ -91,7 +91,7 @@ html, body {
 .logo-arrow { color: var(--accent-gold); font-size: 22px; }
 .logo-flight { color: var(--text-secondary); }
 .logo-log { color: var(--accent-gold); }
- 
+
 .header-stats {
   display: flex;
   gap: 28px;
@@ -115,7 +115,7 @@ html, body {
   text-transform: uppercase;
   margin-top: 2px;
 }
- 
+
 /* ── TAB BAR ── */
 #tab-bar {
   display: flex;
@@ -130,7 +130,7 @@ html, body {
   flex-shrink: 0;
 }
 #tab-bar::-webkit-scrollbar { display: none; }
- 
+
 .tab-btn {
   font-family: 'Orbitron', monospace;
   font-size: 10px;
@@ -149,7 +149,7 @@ html, body {
 }
 .tab-btn:hover { color: var(--text-secondary); }
 .tab-btn.active { color: var(--accent-gold); border-bottom-color: var(--accent-gold); }
- 
+
 .tab-badge {
   display: inline-block;
   background: var(--bg-card2);
@@ -160,9 +160,9 @@ html, body {
   border-radius: 3px;
   margin-left: 4px;
 }
- 
+
 .tab-spacer { flex: 1; }
- 
+
 .tab-action-btn {
   font-family: 'Orbitron', monospace;
   font-size: 9px;
@@ -181,7 +181,7 @@ html, body {
 .tab-action-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
 .tab-action-btn.primary { border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(245,166,35,0.06); }
 .tab-action-btn.primary:hover { background: rgba(245,166,35,0.14); }
- 
+
 /* ── MAIN LAYOUT ── */
 #main-layout {
   display: flex;
@@ -189,7 +189,7 @@ html, body {
   height: calc(100vh - 90px);
   overflow: hidden;
 }
- 
+
 /* ── SUMMARY VIEW ── */
 #summary-view {
   display: none;
@@ -200,13 +200,13 @@ html, body {
   gap: 16px;
 }
 #summary-view.visible { display: flex; }
- 
+
 .summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 14px;
 }
- 
+
 .summary-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -231,7 +231,7 @@ html, body {
   height: 12px;
   background: var(--accent-gold);
 }
- 
+
 .stat-row {
   display: flex;
   justify-content: space-between;
@@ -247,7 +247,7 @@ html, body {
   font-weight: 600;
   color: var(--text-primary);
 }
- 
+
 /* Hours bar chart */
 .mds-bars { display: flex; flex-direction: column; gap: 8px; }
 .mds-bar-row { display: flex; align-items: center; gap: 8px; }
@@ -278,7 +278,7 @@ html, body {
   text-align: right;
   flex-shrink: 0;
 }
- 
+
 .mds-chip {
   display: inline-block;
   padding: 2px 7px;
@@ -288,7 +288,7 @@ html, body {
   font-weight: 700;
   letter-spacing: 1px;
 }
- 
+
 /* ── LOG VIEW (table) ── */
 #log-view {
   display: none;
@@ -296,7 +296,7 @@ html, body {
   height: 100%;
 }
 #log-view.visible { display: flex; }
- 
+
 .log-toolbar {
   display: flex;
   align-items: center;
@@ -306,14 +306,14 @@ html, body {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
- 
+
 .toolbar-info {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
   color: var(--text-muted);
   margin-right: 4px;
 }
- 
+
 .search-box {
   background: var(--bg-main);
   border: 1px solid var(--border-bright);
@@ -327,9 +327,9 @@ html, body {
 }
 .search-box:focus { outline: none; border-color: var(--accent-gold); }
 .search-box::placeholder { color: var(--text-muted); }
- 
+
 .toolbar-spacer { flex: 1; }
- 
+
 .icon-btn {
   background: var(--bg-card2);
   border: 1px solid var(--border-bright);
@@ -345,27 +345,27 @@ html, body {
 .icon-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
 .icon-btn.danger:hover { border-color: var(--accent-red); color: var(--accent-red); }
 .icon-btn.success { border-color: var(--accent-green); color: var(--accent-green); background: rgba(0,255,136,0.05); }
- 
+
 /* TABLE */
 .table-container {
   flex: 1;
   overflow: auto;
   position: relative;
 }
- 
+
 table {
   width: 100%;
   border-collapse: collapse;
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
 }
- 
+
 thead {
   position: sticky;
   top: 0;
   z-index: 10;
 }
- 
+
 thead th {
   background: #0a1322;
   color: var(--text-muted);
@@ -385,7 +385,7 @@ thead th {
 thead th:hover { color: var(--accent-gold); }
 thead th.sorted { color: var(--accent-gold); }
 thead th:first-child { width: 32px; padding: 7px 6px; }
- 
+
 tbody tr {
   border-bottom: 1px solid rgba(26,45,71,0.6);
   transition: background 0.15s;
@@ -393,7 +393,7 @@ tbody tr {
 }
 tbody tr:hover { background: var(--bg-hover); }
 tbody tr.selected { background: var(--row-selected); }
- 
+
 tbody td {
   padding: 6px 8px;
   border-right: 1px solid rgba(26,45,71,0.4);
@@ -407,9 +407,9 @@ tbody td.col-mds { }
 tbody td.col-hrs { color: var(--accent-gold); }
 tbody td.col-zero { color: var(--text-muted); }
 tbody td.col-icao { color: var(--accent-cyan); }
- 
+
 .cb { cursor: pointer; accent-color: var(--accent-gold); width: 13px; height: 13px; }
- 
+
 /* empty state */
 .empty-state {
   display: flex;
@@ -423,7 +423,7 @@ tbody td.col-icao { color: var(--accent-cyan); }
 .empty-icon { font-size: 48px; opacity: 0.3; }
 .empty-msg { font-family: 'Orbitron', monospace; font-size: 12px; letter-spacing: 2px; }
 .empty-sub { font-size: 11px; color: var(--text-muted); }
- 
+
 /* ── MODAL ── */
 .modal-overlay {
   position: fixed; inset: 0;
@@ -435,7 +435,7 @@ tbody td.col-icao { color: var(--accent-cyan); }
   backdrop-filter: blur(4px);
 }
 .modal-overlay.open { display: flex; }
- 
+
 .modal {
   background: var(--bg-card);
   border: 1px solid var(--border-bright);
@@ -447,7 +447,7 @@ tbody td.col-icao { color: var(--accent-cyan); }
   flex-direction: column;
   box-shadow: 0 20px 80px rgba(0,0,0,0.8);
 }
- 
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -468,23 +468,23 @@ tbody td.col-icao { color: var(--accent-cyan); }
   transition: color 0.2s;
 }
 .modal-close:hover { color: var(--accent-red); }
- 
+
 .modal-body {
   padding: 16px 18px;
   overflow-y: auto;
   flex: 1;
 }
- 
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px 14px;
 }
- 
+
 .form-group { display: flex; flex-direction: column; gap: 4px; }
 .form-group.span2 { grid-column: span 2; }
 .form-group.span4 { grid-column: span 4; }
- 
+
 .form-label {
   font-family: 'Orbitron', monospace;
   font-size: 8px;
@@ -492,7 +492,7 @@ tbody td.col-icao { color: var(--accent-cyan); }
   color: var(--text-muted);
   text-transform: uppercase;
 }
- 
+
 .form-input {
   background: var(--bg-main);
   border: 1px solid var(--border-bright);
@@ -505,7 +505,7 @@ tbody td.col-icao { color: var(--accent-cyan); }
   width: 100%;
 }
 .form-input:focus { outline: none; border-color: var(--accent-gold); }
- 
+
 .form-section-title {
   grid-column: span 4;
   font-family: 'Orbitron', monospace;
@@ -516,7 +516,7 @@ tbody td.col-icao { color: var(--accent-cyan); }
   border-bottom: 1px solid var(--border);
   margin-bottom: 2px;
 }
- 
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -524,7 +524,7 @@ tbody td.col-icao { color: var(--accent-cyan); }
   padding: 12px 18px;
   border-top: 1px solid var(--border);
 }
- 
+
 .btn {
   font-family: 'Orbitron', monospace;
   font-size: 9px;
@@ -542,14 +542,14 @@ tbody td.col-icao { color: var(--accent-cyan); }
 .btn-save:hover { background: rgba(245,166,35,0.2); }
 .btn-danger { border-color: var(--accent-red); background: rgba(255,61,90,0.08); color: var(--accent-red); }
 .btn-danger:hover { background: rgba(255,61,90,0.18); }
- 
+
 /* confirm modal */
 .confirm-modal {
   width: 400px;
   padding: 24px;
 }
 .confirm-msg { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; }
- 
+
 /* import modal */
 .import-drop {
   border: 2px dashed var(--border-bright);
@@ -564,20 +564,20 @@ tbody td.col-icao { color: var(--accent-cyan); }
 .import-drop input { display: none; }
 .import-drop-icon { font-size: 36px; margin-bottom: 8px; opacity: 0.5; }
 .import-drop-text { font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 1.5px; color: var(--text-muted); }
- 
+
 .column-mapper { margin-top: 12px; }
 .col-map-title { font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 1.5px; color: var(--accent-cyan); margin-bottom: 10px; }
 .col-map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 280px; overflow-y: auto; }
 .col-map-row { display: flex; align-items: center; gap: 6px; }
 .col-map-label { font-size: 10px; color: var(--text-secondary); width: 160px; flex-shrink: 0; }
 select.form-input { cursor: pointer; }
- 
+
 /* scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
 ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
- 
+
 /* notification */
 .notif {
   position: fixed;
@@ -599,7 +599,7 @@ select.form-input { cursor: pointer; }
 .notif.show { opacity: 1; transform: translateY(0); }
 .notif.error { border-left-color: var(--accent-red); }
 .notif.warn { border-left-color: var(--accent-amber); }
- 
+
 /* responsive */
 @media (max-width: 768px) {
   .summary-grid { grid-template-columns: 1fr; }
@@ -609,7 +609,7 @@ select.form-input { cursor: pointer; }
 </style>
 </head>
 <body>
- 
+
 <!-- HEADER -->
 <div id="app-header">
   <div class="logo">
@@ -623,7 +623,7 @@ select.form-input { cursor: pointer; }
     <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;padding-left:20px;border-left:1px solid var(--border)" id="sync-status">○ OFFLINE</div>
   </div>
 </div>
- 
+
 <!-- TAB BAR -->
 <div id="tab-bar">
   <button class="tab-btn active" data-tab="summary" onclick="switchTab('summary')">◈ SUMMARY</button>
@@ -634,7 +634,7 @@ select.form-input { cursor: pointer; }
   <button class="tab-action-btn primary" onclick="openAddModal()">+ ADD ENTRY</button>
   <button class="tab-action-btn" onclick="exportExcel()">⬇ EXPORT</button>
 </div>
- 
+
 <!-- MAIN -->
 <div id="main-layout">
   <!-- SUMMARY VIEW -->
@@ -658,7 +658,7 @@ select.form-input { cursor: pointer; }
       <div id="specialty-hours-body"></div>
     </div>
   </div>
- 
+
   <!-- LOG VIEW -->
   <div id="log-view">
     <div class="log-toolbar">
@@ -683,7 +683,7 @@ select.form-input { cursor: pointer; }
     </div>
   </div>
 </div>
- 
+
 <!-- ADD/EDIT MODAL -->
 <div class="modal-overlay" id="entry-modal">
   <div class="modal">
@@ -700,7 +700,7 @@ select.form-input { cursor: pointer; }
     </div>
   </div>
 </div>
- 
+
 <!-- CONFIRM MODAL -->
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal confirm-modal">
@@ -717,7 +717,7 @@ select.form-input { cursor: pointer; }
     </div>
   </div>
 </div>
- 
+
 <!-- IMPORT MODAL -->
 <div class="modal-overlay" id="import-modal">
   <div class="modal" style="width:680px">
@@ -749,9 +749,9 @@ select.form-input { cursor: pointer; }
     </div>
   </div>
 </div>
- 
+
 <div class="notif" id="notif"></div>
- 
+
 <script>
 // ── CONSTANTS ──
 const FIELDS = [
@@ -776,11 +776,11 @@ const FIELDS = [
   { key:'arr',     label:'ARR ICAO',                 type:'text',   group:'route',     default:'' },
   { key:'xc',      label:'XC Hours',                 type:'number', group:'route',     default:0  },
 ];
- 
+
 const MDS_COLORS = [
   '#f5a623','#ff6b2b','#00d4ff','#00ff88','#8b5cf6','#ff3d5a','#f59e0b','#10b981','#3b82f6','#ec4899'
 ];
- 
+
 // ── STATE ──
 let entries = [];
 let selectedIds = new Set();
@@ -792,77 +792,43 @@ let colMap = {};
 let sortCol = 'date';
 let sortDir = 1;
 let filterMds = null;
- 
-// ── SUPABASE ──
+
+// ── SUPABASE (plain REST, no library) ──
 const SUPABASE_URL = 'https://vvntsdkmksfneehaxhhb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2bnRzZGtta3NmbmVlaGF4aGhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNTk5NDQsImV4cCI6MjA5MDczNTk0NH0.g2vuTENQIZyzROXbOZLHmXGje7tKAFB068fROc14d68';
-let db = null;
- 
-async function testSupabaseConnection() {
-  // Direct REST call — bypasses the JS client entirely to isolate the issue
-  try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/entries?limit=1', {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Content-Type': 'application/json'
-      }
-    });
-    const text = await res.text();
-    console.log('Direct REST test — status:', res.status, 'body:', text);
-    if(res.status === 200) {
-      notify('Supabase connection OK', '');
-    } else if(res.status === 404) {
-      notify('Table "entries" not found — run the SQL setup script', 'error');
-      setSyncStatus('error');
-    } else if(res.status === 401 || res.status === 403) {
-      notify('Supabase auth error — check your API key or disable RLS', 'error');
-      setSyncStatus('error');
-    } else {
-      notify('Supabase error ' + res.status + ': ' + text, 'error');
-      setSyncStatus('error');
-    }
-  } catch(e) {
-    console.error('Direct REST test failed:', e);
-    notify('Cannot reach Supabase: ' + e.message, 'error');
-    setSyncStatus('error');
-  }
+const SB_HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
+const SB_TABLE = SUPABASE_URL + '/rest/v1/entries';
+
+// Plain fetch wrappers — no Supabase JS client, no Headers cloning
+async function sbSelect() {
+  const res = await fetch(SB_TABLE + '?order=date.asc', { headers: SB_HEADERS });
+  if(!res.ok) { const t = await res.text(); throw new Error(res.status + ': ' + t); }
+  return res.json();
 }
- 
-function initSupabase() {
-  try {
-    const client = (window.supabase && window.supabase.createClient)
-      ? window.supabase.createClient
-      : null;
-    if(!client) throw new Error('Supabase library not found on window');
- 
-    // Use a plain fetch wrapper that returns a simple Response-like object
-    // to avoid the Headers.clone postMessage error in sandboxed environments
-    const safeFetch = async (url, opts = {}) => {
-      const plainHeaders = {};
-      if(opts.headers) {
-        const h = opts.headers;
-        if(typeof h.forEach === 'function') {
-          h.forEach((v, k) => { plainHeaders[k] = v; });
-        } else {
-          Object.assign(plainHeaders, h);
-        }
-      }
-      return fetch(url, { ...opts, headers: plainHeaders });
-    };
- 
-    db = client(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-      global: { fetch: safeFetch }
-    });
-    console.log('Supabase client initialized OK');
-    return true;
-  } catch(e) {
-    console.error('Supabase init failed:', e);
-    return false;
-  }
+
+async function sbUpsert(rows) {
+  const res = await fetch(SB_TABLE, {
+    method: 'POST',
+    headers: { ...SB_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify(Array.isArray(rows) ? rows : [rows])
+  });
+  if(!res.ok) { const t = await res.text(); throw new Error(res.status + ': ' + t); }
 }
- 
+
+async function sbDelete(ids) {
+  const inClause = '(' + ids.map(id => '"' + id + '"').join(',') + ')';
+  const res = await fetch(SB_TABLE + '?entry_id=in.' + inClause, {
+    method: 'DELETE',
+    headers: SB_HEADERS
+  });
+  if(!res.ok) { const t = await res.text(); throw new Error(res.status + ': ' + t); }
+}
+
 // localStorage fallback
 function localSave() {
   try { localStorage.setItem('flightlog_entries', JSON.stringify(entries)); } catch(e){}
@@ -870,34 +836,34 @@ function localSave() {
 function localLoad() {
   try { return JSON.parse(localStorage.getItem('flightlog_entries') || '[]'); } catch(e){ return []; }
 }
- 
+
 // Map our flat entry object to a Supabase row
 function entryToRow(e) {
   return {
-    entry_id:   String(e.id),
-    date:       e.date       || null,
-    mds:        e.mds        || null,
-    tail:       e.tail       || null,
-    prim:       parseFloat(e.prim)   || 0,
-    sor:        parseFloat(e.sor)    || 0,
-    sec:        parseFloat(e.sec)    || 0,
-    instr:      parseFloat(e.instr)  || 0,
-    eval_hrs:   parseFloat(e.eval)   || 0,
-    other:      parseFloat(e.other)  || 0,
-    total:      parseFloat(e.total)  || 0,
-    combat:     parseFloat(e.combat) || 0,
-    cbtsor:     parseFloat(e.cbtsor) || 0,
-    cstime:     parseFloat(e.cstime) || 0,
-    cssor:      parseFloat(e.cssor)  || 0,
-    night:      parseFloat(e.night)  || 0,
-    inst:       parseFloat(e.inst)   || 0,
-    nvg:        parseFloat(e.nvg)    || 0,
-    dep:        e.dep        || null,
-    arr:        e.arr        || null,
-    xc:         parseFloat(e.xc)     || 0,
+    entry_id:  String(e.id),
+    date:      e.date    || null,
+    mds:       e.mds     || null,
+    tail:      e.tail    || null,
+    prim:      parseFloat(e.prim)   || 0,
+    sor:       parseFloat(e.sor)    || 0,
+    sec:       parseFloat(e.sec)    || 0,
+    instr:     parseFloat(e.instr)  || 0,
+    eval_hrs:  parseFloat(e.eval)   || 0,
+    other:     parseFloat(e.other)  || 0,
+    total:     parseFloat(e.total)  || 0,
+    combat:    parseFloat(e.combat) || 0,
+    cbtsor:    parseFloat(e.cbtsor) || 0,
+    cstime:    parseFloat(e.cstime) || 0,
+    cssor:     parseFloat(e.cssor)  || 0,
+    night:     parseFloat(e.night)  || 0,
+    inst:      parseFloat(e.inst)   || 0,
+    nvg:       parseFloat(e.nvg)    || 0,
+    dep:       e.dep     || null,
+    arr:       e.arr     || null,
+    xc:        parseFloat(e.xc)     || 0,
   };
 }
- 
+
 // Map a Supabase row back to our entry object
 function rowToEntry(r) {
   return {
@@ -924,101 +890,78 @@ function rowToEntry(r) {
     xc:     r.xc      || 0,
   };
 }
- 
+
 async function loadData() {
-  // Always load localStorage first for instant display
   entries = localLoad();
- 
-  if(!db) { initSupabase(); }
-  if(!db) {
-    console.error('Supabase client failed to initialize');
-    setSyncStatus('offline');
-    return entries;
+  if(location.protocol === 'file:' || location.origin === 'null') {
+    setSyncStatus('offline'); return entries;
   }
- 
   try {
     setSyncStatus('syncing');
-    console.log('Supabase: fetching entries...');
-    const { data, error } = await db.from('entries').select('*').order('date', {ascending: true});
-    console.log('Supabase response — data:', data, 'error:', error);
-    if(error) throw error;
+    const data = await sbSelect();
     if(data && data.length > 0) {
       entries = data.map(rowToEntry);
       localSave();
-      console.log('Supabase: loaded', entries.length, 'entries');
     } else if(data && data.length === 0 && entries.length > 0) {
-      // Supabase table is empty but localStorage has data — push up
-      console.log('Supabase empty, pushing', entries.length, 'local entries up...');
       await pushAllToSupabase();
-    } else {
-      console.log('Supabase: no data returned');
     }
     setSyncStatus('ok');
   } catch(e) {
-    const errMsg = e?.message || e?.error_description || JSON.stringify(e);
-    console.error('Supabase load error full:', JSON.stringify(e), e);
+    console.error('Supabase load error:', e.message);
     setSyncStatus('error');
-    notify('Sync error: ' + errMsg, 'error');
+    notify('Sync error: ' + e.message, 'error');
   }
   return entries;
 }
- 
-async function saveData() {
-  localSave();
-  // Supabase sync happens at the individual operation level (upsertEntry/deleteEntry)
-}
- 
+
+async function saveData() { localSave(); }
+
 async function upsertEntry(entry) {
   localSave();
-  if(!db) return;
+  if(location.protocol === 'file:' || location.origin === 'null') return;
   try {
     setSyncStatus('syncing');
-    const row = entryToRow(entry);
-    console.log('Supabase: upserting row', row);
-    const { data, error } = await db.from('entries').upsert(row, { onConflict: 'entry_id' }).select();
-    console.log('Supabase upsert response — data:', data, 'error:', error);
-    if(error) throw error;
+    await sbUpsert(entryToRow(entry));
     setSyncStatus('ok');
   } catch(e) {
-    const errMsg2 = e?.message || e?.error_description || e?.details || JSON.stringify(e);
-    console.error('Supabase upsert error full:', JSON.stringify(e), e);
+    console.error('Supabase upsert error:', e.message);
     setSyncStatus('error');
-    notify('Sync error: ' + errMsg2, 'error');
+    notify('Sync error: ' + e.message, 'error');
   }
 }
- 
+
 async function deleteEntries(ids) {
   localSave();
-  if(!db) return;
+  if(location.protocol === 'file:' || location.origin === 'null') return;
   try {
     setSyncStatus('syncing');
-    const { error } = await db.from('entries').delete().in('entry_id', ids.map(String));
-    if(error) throw error;
+    await sbDelete(ids);
     setSyncStatus('ok');
   } catch(e) {
-    console.warn('Supabase delete failed:', e.message);
-    setSyncStatus('offline');
+    console.error('Supabase delete error:', e.message);
+    setSyncStatus('error');
+    notify('Sync error: ' + e.message, 'error');
   }
 }
- 
+
 async function pushAllToSupabase() {
-  if(!db || !entries.length) return;
+  if(!entries.length) return;
   try {
     setSyncStatus('syncing');
-    const rows = entries.map(entryToRow);
-    // Upsert in batches of 100
-    for(let i=0; i<rows.length; i+=100) {
-      const { error } = await db.from('entries').upsert(rows.slice(i, i+100), { onConflict: 'entry_id' });
-      if(error) throw error;
+    for(let i=0; i<entries.length; i+=100) {
+      await sbUpsert(entries.slice(i,i+100).map(entryToRow));
     }
     setSyncStatus('ok');
-    notify('Synced to cloud');
+    notify('All data synced to cloud');
   } catch(e) {
-    console.warn('Supabase push failed:', e.message);
-    setSyncStatus('offline');
+    console.error('Supabase push error:', e.message);
+    setSyncStatus('error');
+    notify('Sync error: ' + e.message, 'error');
   }
 }
- 
+
+function initSupabase() { /* no-op — using plain REST now */ }
+
 // Sync status indicator
 function setSyncStatus(state) {
   const el = document.getElementById('sync-status');
@@ -1033,11 +976,11 @@ function setSyncStatus(state) {
   el.textContent = s.text;
   el.style.color = s.color;
 }
- 
+
 // ── ID generation ──
 let _nextId = Date.now();
 function newId() { return ++_nextId; }
- 
+
 // ── TABS ──
 function switchTab(tab) {
   currentTab = tab;
@@ -1051,7 +994,7 @@ function switchTab(tab) {
   if(tab !== 'summary') { clearSelection(); renderTable(); }
   else { renderSummary(); }
 }
- 
+
 function rebuildMdsTabs() {
   const mdsList = [...new Set(entries.map(e => e.mds).filter(Boolean))].sort();
   const container = document.getElementById('mds-tabs');
@@ -1066,19 +1009,19 @@ function rebuildMdsTabs() {
     container.appendChild(b);
   });
 }
- 
+
 // ── SUMMARY ──
 function renderSummary() {
   rebuildMdsTabs();
   const mdsList = [...new Set(entries.map(e=>e.mds).filter(Boolean))].sort();
   const totalHrs = sum(entries,'total');
   const totalSor = sumInt(entries,'sor');
- 
+
   // header stats
   document.getElementById('h-total-hrs').textContent = totalHrs.toFixed(1);
   document.getElementById('h-sorties').textContent = totalSor;
   document.getElementById('h-entries').textContent = entries.length;
- 
+
   // bars
   const barsEl = document.getElementById('mds-bars-chart');
   const maxHrs = Math.max(...mdsList.map(m=>sum(entries.filter(e=>e.mds===m),'total')),1);
@@ -1095,7 +1038,7 @@ function renderSummary() {
       </div>`;
   });
   if(!mdsList.length) barsEl.innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:16px">No data yet</div>';
- 
+
   // career totals
   const first = entries.length ? entries.map(e=>e.date).filter(Boolean).sort()[0] : '–';
   const last  = entries.length ? entries.map(e=>e.date).filter(Boolean).sort().reverse()[0] : '–';
@@ -1106,7 +1049,7 @@ function renderSummary() {
     ${sr('Total Log Entries', entries.length)}
     ${sr('First Entry', first||'–')}
     ${sr('Latest Entry', last||'–')}`;
- 
+
   // specialty — all numeric fields in a responsive multi-column grid
   const specGroups = [
     {
@@ -1143,7 +1086,7 @@ function renderSummary() {
           ${g.rows.map(([label,val])=>sr(label,val)).join('')}
         </div>`).join('')}
     </div>`;
- 
+
   // per-mds — richer layout now that it spans 2 columns
   const pmd = document.getElementById('per-mds-detail-body');
   pmd.innerHTML = '';
@@ -1184,16 +1127,16 @@ function renderSummary() {
     </div>`;
   }
 }
- 
+
 function sr(label, val) {
   return `<div class="stat-row"><span class="stat-label">${label}</span><span class="stat-val">${val}</span></div>`;
 }
 function sum(arr, key) { return arr.reduce((a,e)=>a+(parseFloat(e[key])||0),0); }
 function sumInt(arr, key) { return Math.round(arr.reduce((a,e)=>a+(parseFloat(e[key])||0),0)); }
- 
+
 // ── TABLE ──
 const COLS = FIELDS;
- 
+
 function getFilteredEntries() {
   let data = filterMds ? entries.filter(e=>e.mds===filterMds) : entries;
   const q = (document.getElementById('search-input')?.value||'').toLowerCase();
@@ -1205,7 +1148,7 @@ function getFilteredEntries() {
   });
   return data;
 }
- 
+
 function renderTable() {
   rebuildMdsTabs();
   const data = getFilteredEntries();
@@ -1223,7 +1166,7 @@ function renderTable() {
   document.getElementById('h-sorties').textContent = sum(allE,'sor');
   document.getElementById('h-entries').textContent = allE.length;
 }
- 
+
 function renderTableHeader() {
   const tr = document.getElementById('table-header');
   tr.innerHTML = `<th><input type="checkbox" class="cb" id="select-all-cb" onchange="toggleSelectAll(this.checked)"></th>`;
@@ -1233,7 +1176,7 @@ function renderTableHeader() {
   });
   tr.innerHTML += `<th>ACTIONS</th>`;
 }
- 
+
 function renderTableBody(data) {
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = '';
@@ -1269,12 +1212,12 @@ function renderTableBody(data) {
     tbody.appendChild(tr);
   });
 }
- 
+
 function sortBy(key) {
   if(sortCol===key) sortDir*=-1; else { sortCol=key; sortDir=1; }
   renderTable();
 }
- 
+
 // ── SELECTION ──
 function toggleRow(id, checked) {
   if(checked) selectedIds.add(id); else selectedIds.delete(id);
@@ -1282,7 +1225,7 @@ function toggleRow(id, checked) {
   if(row) { row.className = checked?'selected':''; row.querySelector('.cb').checked=checked; }
   updateSelectionUI();
 }
- 
+
 function toggleSelectAll(checked) {
   const data = getFilteredEntries();
   data.forEach(e => {
@@ -1291,20 +1234,20 @@ function toggleSelectAll(checked) {
   renderTableBody(data);
   updateSelectionUI();
 }
- 
+
 function selectAllVisible() {
   getFilteredEntries().forEach(e=>selectedIds.add(e.id));
   renderTable();
 }
 function clearSelection() { selectedIds.clear(); renderTable(); }
- 
+
 function updateSelectionUI() {
   const n = selectedIds.size;
   document.getElementById('selected-count').textContent = `${n} selected`;
   document.getElementById('edit-btn').style.display = n===1?'':'none';
   document.getElementById('del-btn').style.display = n>0?'':'none';
 }
- 
+
 // ── FORM ──
 const GROUPS = {
   flight:    'FLIGHT INFO',
@@ -1312,7 +1255,7 @@ const GROUPS = {
   specialty: 'SPECIALTY HOURS',
   route:     'ROUTE',
 };
- 
+
 function buildForm(data={}) {
   const form = document.getElementById('entry-form');
   form.innerHTML = '';
@@ -1335,14 +1278,14 @@ function buildForm(data={}) {
       </div>`;
   });
 }
- 
+
 function openAddModal() {
   editingId = null;
   document.getElementById('modal-title').textContent = 'ADD FLIGHT ENTRY';
   buildForm();
   openModal('entry-modal');
 }
- 
+
 function openEditModal(id) {
   editingId = id;
   const e = entries.find(x=>x.id===id);
@@ -1351,11 +1294,11 @@ function openEditModal(id) {
   buildForm(e);
   openModal('entry-modal');
 }
- 
+
 function editSelected() {
   if(selectedIds.size===1) openEditModal([...selectedIds][0]);
 }
- 
+
 function saveEntry() {
   const data = { id: editingId || newId() };
   FIELDS.forEach(f => {
@@ -1375,7 +1318,7 @@ function saveEntry() {
   if(currentTab==='summary') renderSummary(); else renderTable();
   notify(editingId?'Entry updated':'Entry added');
 }
- 
+
 // ── DELETE ──
 function confirmDeleteOne(id) {
   showConfirm(`Delete this flight entry? This cannot be undone.`, () => {
@@ -1387,7 +1330,7 @@ function confirmDeleteOne(id) {
     notify('Entry deleted', 'warn');
   });
 }
- 
+
 function deleteSelected() {
   const n = selectedIds.size;
   showConfirm(`Delete ${n} selected entr${n===1?'y':'ies'}? This cannot be undone.`, () => {
@@ -1400,14 +1343,14 @@ function deleteSelected() {
     notify(`${n} entr${n===1?'y':'ies'} deleted`, 'warn');
   });
 }
- 
+
 function showConfirm(msg, cb) {
   document.getElementById('confirm-msg').textContent = msg;
   const btn = document.getElementById('confirm-ok-btn');
   btn.onclick = () => { closeModal('confirm-modal'); cb(); };
   openModal('confirm-modal');
 }
- 
+
 // ── IMPORT ──
 function openImportModal() {
   // Reset state
@@ -1418,7 +1361,7 @@ function openImportModal() {
   importRows = []; importHeaders = [];
   openModal('import-modal');
 }
- 
+
 function handleDragOver(e) {
   e.preventDefault();
   e.stopPropagation();
@@ -1435,21 +1378,21 @@ function handleFileSelect(e) {
   const file = e.target.files[0];
   if(file) processImportFile(file);
 }
- 
+
 function setImportStatus(msg, color) {
   const el = document.getElementById('import-status');
   el.textContent = msg;
   el.style.color = color || 'var(--accent-cyan)';
   el.style.display = 'block';
 }
- 
+
 function processImportFile(file) {
   setImportStatus('Reading file...', 'var(--accent-cyan)');
   document.getElementById('import-preview').style.display = 'none';
   document.getElementById('import-btn').style.display = 'none';
- 
+
   var ext = file.name.split('.').pop().toLowerCase();
- 
+
   // CSV: pure native, no library needed
   if(ext === 'csv') {
     var reader = new FileReader();
@@ -1471,7 +1414,7 @@ function processImportFile(file) {
     reader.readAsText(file);
     return;
   }
- 
+
   // XLSX/XLS: requires XLSX library from CDN
   if(typeof XLSX === 'undefined') {
     setImportStatus(
@@ -1480,7 +1423,7 @@ function processImportFile(file) {
     );
     return;
   }
- 
+
   var reader = new FileReader();
   reader.onerror = function(){ setImportStatus('Could not read the file.', 'var(--accent-red)'); };
   reader.onload = function(ev) {
@@ -1510,14 +1453,14 @@ function processImportFile(file) {
         }
       });
       console.log('Selected sheet:', bestSheet, 'with', bestDataCount, 'data rows');
- 
+
       if(bestDataCount === 0) {
         // Show sheet picker so user can choose manually
         var sheetList = wb.SheetNames.join(', ');
         setImportStatus('All sheets appear empty. Sheets found: ' + sheetList + '. Try saving your data sheet as CSV and importing that.', 'var(--accent-red)');
         return;
       }
- 
+
       var ws = wb.Sheets[bestSheet];
       var json = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
       if(!json || json.length < 2) {
@@ -1558,7 +1501,7 @@ function processImportFile(file) {
   };
   reader.readAsArrayBuffer(file);
 }
- 
+
 // Lightweight RFC-4180 CSV parser
 function parseCSV(text) {
   var rows = [], row = [], field = '', inQ = false;
@@ -1580,11 +1523,11 @@ function parseCSV(text) {
   if(field||row.length){ row.push(field.trim()); if(row.some(function(c){return c;})) rows.push(row); }
   return rows;
 }
- 
+
 function buildColMapper() {
   const grid = document.getElementById('col-map-grid');
   grid.innerHTML = '';
- 
+
   // All known aliases for each field key (lowercase, no spaces/symbols)
   const ALIASES = {
     date:   ['date','timestamp','flightdate','date'],
@@ -1608,17 +1551,17 @@ function buildColMapper() {
     arr:    ['arricao','arr','arrival','arrivalicao','destination','to'],
     xc:     ['xchours','xctime','xc','crosscountry','crosscountryhours'],
   };
- 
+
   function normalize(s) {
     return String(s||'').toLowerCase().replace(/[\s_\-()/]/g,'');
   }
- 
+
   FIELDS.forEach(f => {
     const normLabel = normalize(f.label);
     const normKey   = normalize(f.key);
     const aliases   = (ALIASES[f.key] || []);
     let autoIdx = -1;
- 
+
     // Priority 1: exact alias match
     autoIdx = importHeaders.findIndex(h => aliases.includes(normalize(h)));
     // Priority 2: exact label match
@@ -1636,10 +1579,10 @@ function buildColMapper() {
         return aliases.some(a => nh.includes(a) || a.includes(nh));
       });
     }
- 
+
     const options = '<option value="">-- skip --</option>' +
       importHeaders.map((h,i) => `<option value="${i}"${i===autoIdx?' selected':''}>${h||'(blank col '+i+')'}</option>`).join('');
- 
+
     const matched = autoIdx !== -1 ? ' style="border-color:var(--accent-green)"' : '';
     grid.innerHTML += `<div class="col-map-row">
       <span class="col-map-label" title="${f.label}">${f.label}</span>
@@ -1647,19 +1590,19 @@ function buildColMapper() {
     </div>`;
   });
 }
- 
+
 function doImport() {
   let added = 0, skipped = 0;
   importRows.forEach(row => {
     const e = { id: newId() };
     let hasData = false;
- 
+
     FIELDS.forEach(f => {
       const sel = document.getElementById('map-'+f.key);
       if(!sel || sel.value === '') { e[f.key] = f.default; return; }
       const colIdx = parseInt(sel.value);
       let raw = (colIdx < row.length) ? row[colIdx] : null;
- 
+
       // Convert Excel date serial numbers (e.g. 45291) to YYYY-MM-DD
       if(f.key === 'date') {
         if(typeof raw === 'number') {
@@ -1683,21 +1626,21 @@ function doImport() {
           raw = yr + '-' + mo + '-' + dy;
         }
       }
- 
+
       // Normalise to string for the empty check
       const strVal = (raw === null || raw === undefined) ? '' : String(raw).trim();
       if(strVal !== '') hasData = true;
- 
+
       if(f.type === 'number') {
         e[f.key] = parseFloat(String(raw||'').replace(/,/g,'')) || 0;
       } else {
         e[f.key] = strVal;
       }
     });
- 
+
     if(hasData) { entries.push(e); added++; } else { skipped++; }
   });
- 
+
   localSave();
   closeModal('import-modal');
   rebuildMdsTabs();
@@ -1707,7 +1650,7 @@ function doImport() {
   importRows = []; importHeaders = [];
   pushAllToSupabase();
 }
- 
+
 // ── EXPORT ──
 function exportExcel() {
   const data = filterMds ? entries.filter(e=>e.mds===filterMds) : entries;
@@ -1731,14 +1674,14 @@ function exportExcel() {
   XLSX.writeFile(wb, `FlightLog_${new Date().toISOString().slice(0,10)}.xlsx`);
   notify('Export complete');
 }
- 
+
 // ── MODAL HELPERS ──
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
 });
- 
+
 // ── NOTIFICATIONS ──
 let notifTimer;
 function notify(msg, type='') {
@@ -1748,28 +1691,15 @@ function notify(msg, type='') {
   clearTimeout(notifTimer);
   notifTimer = setTimeout(()=>el.classList.remove('show'),2800);
 }
- 
+
 // ── SERVICE WORKER (PWA) ──
 if('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
- 
+
 // ── INIT ──
-initSupabase();
 setSyncStatus('syncing');
-// Skip connectivity test in sandboxed/iframe environments
-// Full sync will work on GitHub Pages (http/https)
-if(location.protocol === 'file:' || location.origin === 'null') {
-  console.warn('Running in local/sandboxed context — Supabase sync disabled. Upload to GitHub Pages to enable sync.');
-  setSyncStatus('offline');
-  entries = localLoad();
-  renderSummary();
-} else {
-  loadData().then(() => {
-    renderSummary();
-  });
-}
+loadData().then(() => { renderSummary(); });
 </script>
 </body>
 </html>
- 
