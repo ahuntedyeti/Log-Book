@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- manifest.json only works when hosted on a server, not file:// -->
+<title>FLIGHT LOG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script>
+(function(){
+  var urls = [
+    'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+    'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+    'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+  ];
+  var idx = 0;
+  function tryLoad() {
+    if(idx >= urls.length){ window._xlsxLoadFailed=true; console.error('XLSX: all CDNs failed'); return; }
+    var s = document.createElement('script');
+    s.src = urls[idx++];
+    s.onerror = function(){ tryLoad(); };
+    s.onload  = function(){ window._xlsxLoaded = true; };
+    document.head.appendChild(s);
+  }
+  tryLoad();
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg-deep: #040810;
+  --bg-main: #080d1a;
+  --bg-card: #0d1526;
+  --bg-card2: #101c30;
+  --bg-hover: #152035;
+  --accent-gold: #f5a623;
+  --accent-amber: #e8891a;
+  --accent-orange: #ff6b2b;
+  --accent-cyan: #00d4ff;
+  --accent-green: #00ff88;
+  --accent-red: #ff3d5a;
+  --accent-purple: #8b5cf6;
+  --text-primary: #e8edf5;
+  --text-secondary: #7a8fa8;
+  --text-muted: #4a5e78;
+  --border: #1a2d47;
+  --border-bright: #2a4060;
+  --tab-active: #f5a623;
+  --row-selected: rgba(245,166,35,0.08);
+  --shadow: 0 4px 24px rgba(0,0,0,0.6);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+#app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 52px;
+  background: linear-gradient(180deg, #0c1628 0%, #080d1a 100%);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.logo {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-arrow { color: var(--accent-gold); font-size: 22px; }
+.logo-flight { color: var(--text-secondary); }
+.logo-log { color: var(--accent-gold); }
+
+.header-stats {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
+.hstat {
+  text-align: center;
+}
+.hstat-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  line-height: 1;
+}
+.hstat-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ── TAB BAR ── */
+#tab-bar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border);
+  padding: 0 12px;
+  height: 38px;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+#tab-bar::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+  top: 1px;
+}
+.tab-btn:hover { color: var(--text-secondary); }
+.tab-btn.active { color: var(--accent-gold); border-bottom-color: var(--accent-gold); }
+
+.tab-badge {
+  display: inline-block;
+  background: var(--bg-card2);
+  color: var(--accent-gold);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+.tab-spacer { flex: 1; }
+
+.tab-action-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-bright);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  margin-left: 6px;
+}
+.tab-action-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+.tab-action-btn.primary { border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(245,166,35,0.06); }
+.tab-action-btn.primary:hover { background: rgba(245,166,35,0.14); }
+
+/* ── MAIN LAYOUT ── */
+#main-layout {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 90px);
+  overflow: hidden;
+}
+
+/* ── SUMMARY VIEW ── */
+#summary-view {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  gap: 16px;
+}
+#summary-view.visible { display: flex; }
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+.card-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent-gold);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: var(--accent-gold);
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(26,45,71,0.5);
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-label { color: var(--text-secondary); font-size: 11px; }
+.stat-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Hours bar chart */
+.mds-bars { display: flex; flex-direction: column; gap: 8px; }
+.mds-bar-row { display: flex; align-items: center; gap: 8px; }
+.mds-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  width: 68px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.mds-bar-track {
+  flex: 1;
+  height: 14px;
+  background: var(--bg-card2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.mds-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s ease;
+}
+.mds-bar-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-secondary);
+  width: 58px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.mds-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* ── LOG VIEW (table) ── */
+#log-view {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+}
+#log-view.visible { display: flex; }
+
+.log-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.toolbar-info {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+.search-box {
+  background: var(--bg-main);
+  border: 1px solid var(--border-bright);
+  color: var(--text-primary);
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  width: 180px;
+  transition: border-color 0.2s;
+}
+.search-box:focus { outline: none; border-color: var(--accent-gold); }
+.search-box::placeholder { color: var(--text-muted); }
+
+.toolbar-spacer { flex: 1; }
+
+.icon-btn {
+  background: var(--bg-card2);
+  border: 1px solid var(--border-bright);
+  color: var(--text-secondary);
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.5px;
+}
+.icon-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+.icon-btn.danger:hover { border-color: var(--accent-red); color: var(--accent-red); }
+.icon-btn.success { border-color: var(--accent-green); color: var(--accent-green); background: rgba(0,255,136,0.05); }
+
+/* TABLE */
+.table-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+thead th {
+  background: #0a1322;
+  color: var(--text-muted);
+  font-family: 'Orbitron', monospace;
+  font-size: 8.5px;
+  letter-spacing: 1px;
+  font-weight: 600;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-bright);
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+thead th:hover { color: var(--accent-gold); }
+thead th.sorted { color: var(--accent-gold); }
+thead th:first-child { width: 32px; padding: 7px 6px; }
+
+tbody tr {
+  border-bottom: 1px solid rgba(26,45,71,0.6);
+  transition: background 0.15s;
+  cursor: pointer;
+}
+tbody tr:hover { background: var(--bg-hover); }
+tbody tr.selected { background: var(--row-selected); }
+
+tbody td {
+  padding: 6px 8px;
+  border-right: 1px solid rgba(26,45,71,0.4);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-align: center;
+}
+tbody td:first-child { text-align: center; }
+tbody td.col-date { color: var(--text-primary); font-weight: 500; }
+tbody td.col-mds { }
+tbody td.col-hrs { color: var(--accent-gold); }
+tbody td.col-zero { color: var(--text-muted); }
+tbody td.col-icao { color: var(--accent-cyan); }
+
+.cb { cursor: pointer; accent-color: var(--accent-gold); width: 13px; height: 13px; }
+
+/* empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--text-muted);
+}
+.empty-icon { font-size: 48px; opacity: 0.3; }
+.empty-msg { font-family: 'Orbitron', monospace; font-size: 12px; letter-spacing: 2px; }
+.empty-sub { font-size: 11px; color: var(--text-muted); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(4,8,16,0.85);
+  z-index: 999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  width: 880px;
+  max-width: 96vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.8);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent-gold);
+}
+.modal-close {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 20px; cursor: pointer; line-height: 1;
+  transition: color 0.2s;
+}
+.modal-close:hover { color: var(--accent-red); }
+
+.modal-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px 14px;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group.span2 { grid-column: span 2; }
+.form-group.span4 { grid-column: span 4; }
+
+.form-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.form-input {
+  background: var(--bg-main);
+  border: 1px solid var(--border-bright);
+  color: var(--text-primary);
+  padding: 7px 10px;
+  border-radius: 3px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.form-input:focus { outline: none; border-color: var(--accent-gold); }
+
+.form-section-title {
+  grid-column: span 4;
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--accent-amber);
+  padding: 8px 0 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.btn {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  padding: 8px 18px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid;
+}
+.btn-cancel { border-color: var(--border-bright); background: transparent; color: var(--text-secondary); }
+.btn-cancel:hover { border-color: var(--text-secondary); }
+.btn-save { border-color: var(--accent-gold); background: rgba(245,166,35,0.1); color: var(--accent-gold); }
+.btn-save:hover { background: rgba(245,166,35,0.2); }
+.btn-danger { border-color: var(--accent-red); background: rgba(255,61,90,0.08); color: var(--accent-red); }
+.btn-danger:hover { background: rgba(255,61,90,0.18); }
+
+/* confirm modal */
+.confirm-modal {
+  width: 400px;
+  padding: 24px;
+}
+.confirm-msg { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; }
+
+/* import modal */
+.import-drop {
+  border: 2px dashed var(--border-bright);
+  border-radius: 6px;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  margin-bottom: 14px;
+}
+.import-drop:hover, .import-drop.drag { border-color: var(--accent-gold); background: rgba(245,166,35,0.04); }
+.import-drop input { display: none; }
+.import-drop-icon { font-size: 36px; margin-bottom: 8px; opacity: 0.5; }
+.import-drop-text { font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 1.5px; color: var(--text-muted); }
+
+.column-mapper { margin-top: 12px; }
+.col-map-title { font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 1.5px; color: var(--accent-cyan); margin-bottom: 10px; }
+.col-map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 280px; overflow-y: auto; }
+.col-map-row { display: flex; align-items: center; gap: 6px; }
+.col-map-label { font-size: 10px; color: var(--text-secondary); width: 160px; flex-shrink: 0; }
+select.form-input { cursor: pointer; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* notification */
+.notif {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border-bright);
+  border-left: 3px solid var(--accent-green);
+  color: var(--text-primary);
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s;
+  pointer-events: none;
+}
+.notif.show { opacity: 1; transform: translateY(0); }
+.notif.error { border-left-color: var(--accent-red); }
+.notif.warn { border-left-color: var(--accent-amber); }
+
+/* responsive */
+@media (max-width: 768px) {
+  .summary-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .form-section-title, .form-group.span4 { grid-column: span 2; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="app-header">
+  <div class="logo">
+    <span class="logo-arrow">✈</span>
+    <span class="logo-flight">FLIGHT</span>&nbsp;<span class="logo-log">LOG</span>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><div class="hstat-val" id="h-total-hrs">0.0</div><div class="hstat-lbl">TOTAL HRS</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-sorties">0</div><div class="hstat-lbl">SORTIES</div></div>
+    <div class="hstat"><div class="hstat-val" id="h-entries">0</div><div class="hstat-lbl">ENTRIES</div></div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;padding-left:20px;border-left:1px solid var(--border)" id="sync-status">○ OFFLINE</div>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div id="tab-bar">
+  <button class="tab-btn active" data-tab="summary" onclick="switchTab('summary')">◈ SUMMARY</button>
+  <button class="tab-btn" data-tab="master" onclick="switchTab('master')">MASTER LOG</button>
+  <div id="mds-tabs"></div>
+  <div class="tab-spacer"></div>
+  <button class="tab-action-btn" onclick="openImportModal()">⬆ IMPORT EXCEL</button>
+  <button class="tab-action-btn primary" onclick="openAddModal()">+ ADD ENTRY</button>
+  <button class="tab-action-btn" onclick="exportExcel()">⬇ EXPORT</button>
+</div>
+
+<!-- MAIN -->
+<div id="main-layout">
+  <!-- SUMMARY VIEW -->
+  <div id="summary-view" class="visible">
+    <div id="hours-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:16px;">
+      <div class="card-title">HOURS BY AIRCRAFT (MDS)</div>
+      <div class="mds-bars" id="mds-bars-chart"></div>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card" id="career-totals-card">
+        <div class="card-title">+ CAREER TOTALS</div>
+        <div id="career-totals-body"></div>
+      </div>
+      <div class="summary-card" style="grid-column: span 2;">
+        <div class="card-title">◆ PER-MDS DETAIL</div>
+        <div id="per-mds-detail-body"></div>
+      </div>
+    </div>
+    <div class="summary-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:14px 16px;">
+      <div class="card-title">◐ SORTIES & HOURS TOTALS</div>
+      <div id="specialty-hours-body"></div>
+    </div>
+  </div>
+
+  <!-- LOG VIEW -->
+  <div id="log-view">
+    <div class="log-toolbar">
+      <span class="toolbar-info" id="selected-count">0 selected</span>
+      <input class="search-box" type="text" id="search-input" placeholder="Search entries..." oninput="renderTable()">
+      <div class="toolbar-spacer"></div>
+      <button class="icon-btn" onclick="selectAllVisible()">Select All</button>
+      <button class="icon-btn" onclick="clearSelection()">Clear</button>
+      <button class="icon-btn" onclick="editSelected()" id="edit-btn" style="display:none">✎ Edit</button>
+      <button class="icon-btn danger" onclick="deleteSelected()" id="del-btn" style="display:none">✕ Delete</button>
+    </div>
+    <div class="table-container" id="table-container">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">✈</div>
+        <div class="empty-msg">NO FLIGHT DATA</div>
+        <div class="empty-sub">Import an Excel file or add entries manually</div>
+      </div>
+      <table id="log-table" style="display:none">
+        <thead><tr id="table-header"></tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="entry-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">ADD FLIGHT ENTRY</span>
+      <button class="modal-close" onclick="closeModal('entry-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" id="entry-form"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('entry-modal')">CANCEL</button>
+      <button class="btn btn-save" onclick="saveEntry()">SAVE ENTRY</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal confirm-modal">
+    <div class="modal-header">
+      <span class="modal-title">CONFIRM ACTION</span>
+      <button class="modal-close" onclick="closeModal('confirm-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="confirm-msg" id="confirm-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('confirm-modal')">CANCEL</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">CONFIRM</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal" style="width:680px">
+    <div class="modal-header">
+      <span class="modal-title">IMPORT EXCEL DATA</span>
+      <button class="modal-close" onclick="closeModal('import-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileSelect(event)">
+      <div class="import-drop" id="import-drop"
+           ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="this.classList.remove('drag')">
+        <div class="import-drop-icon">📂</div>
+        <div class="import-drop-text">DROP EXCEL / CSV FILE HERE OR CLICK TO BROWSE</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:6px;">.xlsx · .xls · .csv</div>
+        <button onclick="document.getElementById('file-input').click()" style="margin-top:12px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1.5px;padding:7px 18px;border:1px solid var(--border-bright);background:var(--bg-card2);color:var(--text-secondary);border-radius:3px;cursor:pointer;">BROWSE FILES</button>
+      </div>
+      <div id="import-status" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent-cyan);padding:6px 0;display:none"></div>
+      <div id="import-preview" style="display:none">
+        <div class="column-mapper">
+          <div class="col-map-title">MAP COLUMNS FROM YOUR FILE — verify and adjust if needed</div>
+          <div class="col-map-grid" id="col-map-grid"></div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-muted);font-family:'Share Tech Mono',monospace" id="import-row-count"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('import-modal')">CANCEL</button>
+      <button class="btn btn-save" id="import-btn" onclick="doImport()" style="display:none">IMPORT DATA</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ── CONSTANTS ──
+const FIELDS = [
+  { key:'date',    label:'DATE',                   type:'date',   group:'flight',    default:'' },
+  { key:'mds',     label:'MDS',                    type:'text',   group:'flight',    default:'' },
+  { key:'tail',    label:'Aircraft Tail ID',        type:'text',   group:'flight',    default:'' },
+  { key:'prim',    label:'Primary Hours',           type:'number', group:'hours',     default:0  },
+  { key:'sor',     label:'Sorties',                 type:'number', group:'hours',     default:0  },
+  { key:'sec',     label:'Secondary Hours',         type:'number', group:'hours',     default:0  },
+  { key:'instr',   label:'Instructor Hours',        type:'number', group:'hours',     default:0  },
+  { key:'eval',    label:'Evaluator Hours',         type:'number', group:'hours',     default:0  },
+  { key:'other',   label:'Other Hours',             type:'number', group:'hours',     default:0  },
+  { key:'total',   label:'Total Hours',             type:'number', group:'hours',     default:0  },
+  { key:'combat',  label:'Combat Hours',             type:'number', group:'specialty', default:0  },
+  { key:'cbtsor',  label:'Combat Sorties',           type:'number', group:'specialty', default:0  },
+  { key:'cstime',  label:'Combat Support Hours',     type:'number', group:'specialty', default:0  },
+  { key:'cssor',   label:'Combat Support Sorties',   type:'number', group:'specialty', default:0  },
+  { key:'night',   label:'Night Hours',              type:'number', group:'specialty', default:0  },
+  { key:'inst',    label:'Instrument Hours',         type:'number', group:'specialty', default:0  },
+  { key:'nvg',     label:'Night Vision Goggle Hours',type:'number', group:'specialty', default:0  },
+  { key:'dep',     label:'DEP ICAO',                 type:'text',   group:'route',     default:'' },
+  { key:'arr',     label:'ARR ICAO',                 type:'text',   group:'route',     default:'' },
+  { key:'xc',      label:'XC Hours',                 type:'number', group:'route',     default:0  },
+];
+
+const MDS_COLORS = [
+  '#f5a623','#ff6b2b','#00d4ff','#00ff88','#8b5cf6','#ff3d5a','#f59e0b','#10b981','#3b82f6','#ec4899'
+];
+
+// ── STATE ──
+let entries = [];
+let selectedIds = new Set();
+let currentTab = 'summary';
+let editingId = null;
+let importRows = [];
+let importHeaders = [];
+let colMap = {};
+let sortCol = 'date';
+let sortDir = 1;
+let filterMds = null;
+
+// ── SUPABASE ──
+const SUPABASE_URL = 'https://vvntsdkmksfneehaxhhb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2bnRzZGtta3NmbmVlaGF4aGhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNTk5NDQsImV4cCI6MjA5MDczNTk0NH0.g2vuTENQIZyzROXbOZLHmXGje7tKAFB068fROc14d68';
+let db = null;
+
+function initSupabase() {
+  try {
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    return true;
+  } catch(e) {
+    console.warn('Supabase init failed:', e);
+    return false;
+  }
+}
+
+// localStorage fallback
+function localSave() {
+  try { localStorage.setItem('flightlog_entries', JSON.stringify(entries)); } catch(e){}
+}
+function localLoad() {
+  try { return JSON.parse(localStorage.getItem('flightlog_entries') || '[]'); } catch(e){ return []; }
+}
+
+// Map our flat entry object to a Supabase row
+function entryToRow(e) {
+  return {
+    entry_id:   String(e.id),
+    date:       e.date       || null,
+    mds:        e.mds        || null,
+    tail:       e.tail       || null,
+    prim:       parseFloat(e.prim)   || 0,
+    sor:        parseFloat(e.sor)    || 0,
+    sec:        parseFloat(e.sec)    || 0,
+    instr:      parseFloat(e.instr)  || 0,
+    eval_hrs:   parseFloat(e.eval)   || 0,
+    other:      parseFloat(e.other)  || 0,
+    total:      parseFloat(e.total)  || 0,
+    combat:     parseFloat(e.combat) || 0,
+    cbtsor:     parseFloat(e.cbtsor) || 0,
+    cstime:     parseFloat(e.cstime) || 0,
+    cssor:      parseFloat(e.cssor)  || 0,
+    night:      parseFloat(e.night)  || 0,
+    inst:       parseFloat(e.inst)   || 0,
+    nvg:        parseFloat(e.nvg)    || 0,
+    dep:        e.dep        || null,
+    arr:        e.arr        || null,
+    xc:         parseFloat(e.xc)     || 0,
+  };
+}
+
+// Map a Supabase row back to our entry object
+function rowToEntry(r) {
+  return {
+    id:     r.entry_id,
+    date:   r.date    || '',
+    mds:    r.mds     || '',
+    tail:   r.tail    || '',
+    prim:   r.prim    || 0,
+    sor:    r.sor     || 0,
+    sec:    r.sec     || 0,
+    instr:  r.instr   || 0,
+    eval:   r.eval_hrs|| 0,
+    other:  r.other   || 0,
+    total:  r.total   || 0,
+    combat: r.combat  || 0,
+    cbtsor: r.cbtsor  || 0,
+    cstime: r.cstime  || 0,
+    cssor:  r.cssor   || 0,
+    night:  r.night   || 0,
+    inst:   r.inst    || 0,
+    nvg:    r.nvg     || 0,
+    dep:    r.dep     || '',
+    arr:    r.arr     || '',
+    xc:     r.xc      || 0,
+  };
+}
+
+async function loadData() {
+  // Always load localStorage first for instant display
+  entries = localLoad();
+
+  if(!db) { initSupabase(); }
+  if(!db) return;
+
+  try {
+    setSyncStatus('syncing');
+    const { data, error } = await db.from('entries').select('*').order('date', {ascending: true});
+    if(error) throw error;
+    if(data && data.length > 0) {
+      entries = data.map(rowToEntry);
+      localSave();
+    } else if(entries.length > 0) {
+      // localStorage has data but Supabase is empty — push up
+      await pushAllToSupabase();
+    }
+    setSyncStatus('ok');
+  } catch(e) {
+    console.warn('Supabase load failed, using localStorage:', e.message);
+    setSyncStatus('offline');
+  }
+  return entries;
+}
+
+async function saveData() {
+  localSave();
+  // Supabase sync happens at the individual operation level (upsertEntry/deleteEntry)
+}
+
+async function upsertEntry(entry) {
+  localSave();
+  if(!db) return;
+  try {
+    setSyncStatus('syncing');
+    const { error } = await db.from('entries').upsert(entryToRow(entry), { onConflict: 'entry_id' });
+    if(error) throw error;
+    setSyncStatus('ok');
+  } catch(e) {
+    console.warn('Supabase upsert failed:', e.message);
+    setSyncStatus('offline');
+  }
+}
+
+async function deleteEntries(ids) {
+  localSave();
+  if(!db) return;
+  try {
+    setSyncStatus('syncing');
+    const { error } = await db.from('entries').delete().in('entry_id', ids.map(String));
+    if(error) throw error;
+    setSyncStatus('ok');
+  } catch(e) {
+    console.warn('Supabase delete failed:', e.message);
+    setSyncStatus('offline');
+  }
+}
+
+async function pushAllToSupabase() {
+  if(!db || !entries.length) return;
+  try {
+    setSyncStatus('syncing');
+    const rows = entries.map(entryToRow);
+    // Upsert in batches of 100
+    for(let i=0; i<rows.length; i+=100) {
+      const { error } = await db.from('entries').upsert(rows.slice(i, i+100), { onConflict: 'entry_id' });
+      if(error) throw error;
+    }
+    setSyncStatus('ok');
+    notify('Synced to cloud');
+  } catch(e) {
+    console.warn('Supabase push failed:', e.message);
+    setSyncStatus('offline');
+  }
+}
+
+// Sync status indicator
+function setSyncStatus(state) {
+  const el = document.getElementById('sync-status');
+  if(!el) return;
+  const states = {
+    ok:      { text: '● SYNCED',   color: 'var(--accent-green)' },
+    syncing: { text: '◌ SYNCING',  color: 'var(--accent-amber)' },
+    offline: { text: '○ OFFLINE',  color: 'var(--text-muted)'   },
+  };
+  const s = states[state] || states.offline;
+  el.textContent = s.text;
+  el.style.color = s.color;
+}
+
+// ── ID generation ──
+let _nextId = Date.now();
+function newId() { return ++_nextId; }
+
+// ── TABS ──
+function switchTab(tab) {
+  currentTab = tab;
+  filterMds = tab !== 'summary' && tab !== 'master' ? tab : null;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-tab="${tab}"]`);
+  if(btn) btn.classList.add('active');
+  document.getElementById('summary-view').classList.toggle('visible', tab === 'summary');
+  const lv = document.getElementById('log-view');
+  lv.classList.toggle('visible', tab !== 'summary');
+  if(tab !== 'summary') { clearSelection(); renderTable(); }
+  else { renderSummary(); }
+}
+
+function rebuildMdsTabs() {
+  const mdsList = [...new Set(entries.map(e => e.mds).filter(Boolean))].sort();
+  const container = document.getElementById('mds-tabs');
+  container.innerHTML = '';
+  mdsList.forEach(mds => {
+    const cnt = entries.filter(e => e.mds === mds).length;
+    const b = document.createElement('button');
+    b.className = 'tab-btn' + (currentTab === mds ? ' active' : '');
+    b.setAttribute('data-tab', mds);
+    b.innerHTML = `${mds}<span class="tab-badge">${cnt}</span>`;
+    b.onclick = () => switchTab(mds);
+    container.appendChild(b);
+  });
+}
+
+// ── SUMMARY ──
+function renderSummary() {
+  rebuildMdsTabs();
+  const mdsList = [...new Set(entries.map(e=>e.mds).filter(Boolean))].sort();
+  const totalHrs = sum(entries,'total');
+  const totalSor = sumInt(entries,'sor');
+
+  // header stats
+  document.getElementById('h-total-hrs').textContent = totalHrs.toFixed(1);
+  document.getElementById('h-sorties').textContent = totalSor;
+  document.getElementById('h-entries').textContent = entries.length;
+
+  // bars
+  const barsEl = document.getElementById('mds-bars-chart');
+  const maxHrs = Math.max(...mdsList.map(m=>sum(entries.filter(e=>e.mds===m),'total')),1);
+  barsEl.innerHTML = '';
+  mdsList.forEach((mds,i) => {
+    const hrs = sum(entries.filter(e=>e.mds===mds),'total');
+    const pct = (hrs/maxHrs*100).toFixed(1);
+    const color = MDS_COLORS[i % MDS_COLORS.length];
+    barsEl.innerHTML += `
+      <div class="mds-bar-row">
+        <div class="mds-label"><span class="mds-chip" style="background:${color}22;color:${color};border:1px solid ${color}44">${mds}</span></div>
+        <div class="mds-bar-track"><div class="mds-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${color},${color}88)"></div></div>
+        <div class="mds-bar-val">${hrs.toFixed(1)} hrs</div>
+      </div>`;
+  });
+  if(!mdsList.length) barsEl.innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:16px">No data yet</div>';
+
+  // career totals
+  const first = entries.length ? entries.map(e=>e.date).filter(Boolean).sort()[0] : '–';
+  const last  = entries.length ? entries.map(e=>e.date).filter(Boolean).sort().reverse()[0] : '–';
+  document.getElementById('career-totals-body').innerHTML = `
+    ${sr('Total Flight Hours', totalHrs.toFixed(1))}
+    ${sr('Total Sorties', totalSor)}
+    ${sr('Aircraft Types', mdsList.length)}
+    ${sr('Total Log Entries', entries.length)}
+    ${sr('First Entry', first||'–')}
+    ${sr('Latest Entry', last||'–')}`;
+
+  // specialty — all numeric fields in a responsive multi-column grid
+  const specGroups = [
+    {
+      title: 'SORTIES',
+      rows: [
+        ['Total Sorties',          sumInt(entries,'sor')],
+        ['Combat Sorties',         sumInt(entries,'cbtsor')],
+        ['Combat Support Sorties', sumInt(entries,'cssor')],
+      ]
+    },
+    {
+      title: 'HOURS',
+      rows: [
+        ['Total Hours',            sum(entries,'total').toFixed(1)],
+        ['Primary Hours',          sum(entries,'prim').toFixed(1)],
+        ['Secondary Hours',        sum(entries,'sec').toFixed(1)],
+        ['Instructor Hours',       sum(entries,'instr').toFixed(1)],
+        ['Evaluator Hours',        sum(entries,'eval').toFixed(1)],
+        ['Other Hours',            sum(entries,'other').toFixed(1)],
+        ['Combat Hours',           sum(entries,'combat').toFixed(1)],
+        ['Combat Support Hours',   sum(entries,'cstime').toFixed(1)],
+        ['Night Hours',            sum(entries,'night').toFixed(1)],
+        ['Instrument Hours',       sum(entries,'inst').toFixed(1)],
+        ['NVG Hours',              sum(entries,'nvg').toFixed(1)],
+        ['XC Hours',               sum(entries,'xc').toFixed(1)],
+      ]
+    },
+  ];
+  document.getElementById('specialty-hours-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0 40px;">
+      ${specGroups.map(g=>`
+        <div>
+          <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;color:var(--accent-amber);padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:4px">${g.title}</div>
+          ${g.rows.map(([label,val])=>sr(label,val)).join('')}
+        </div>`).join('')}
+    </div>`;
+
+  // per-mds — richer layout now that it spans 2 columns
+  const pmd = document.getElementById('per-mds-detail-body');
+  pmd.innerHTML = '';
+  if(!mdsList.length) {
+    pmd.innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:16px">No data yet</div>';
+  } else {
+    pmd.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:4px">
+      ${mdsList.map((mds,i) => {
+        const grp = entries.filter(e=>e.mds===mds);
+        const color = MDS_COLORS[i%MDS_COLORS.length];
+        return `<div style="background:${color}0a;border:1px solid ${color}33;border-radius:4px;padding:10px">
+          <div style="margin-bottom:7px"><span class="mds-chip" style="background:${color}22;color:${color};border:1px solid ${color}55;font-size:11px">${mds}</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px">
+            ${[
+              ['Total Hrs',    sum(grp,'total').toFixed(1)],
+              ['Sorties',      sumInt(grp,'sor')],
+              ['Primary',      sum(grp,'prim').toFixed(1)],
+              ['Secondary',    sum(grp,'sec').toFixed(1)],
+              ['Instructor',   sum(grp,'instr').toFixed(1)],
+              ['Evaluator',    sum(grp,'eval').toFixed(1)],
+              ['Combat Hrs',   sum(grp,'combat').toFixed(1)],
+              ['Cbt Sor',      sumInt(grp,'cbtsor')],
+              ['CS Hrs',       sum(grp,'cstime').toFixed(1)],
+              ['CS Sor',       sumInt(grp,'cssor')],
+              ['Night Hrs',    sum(grp,'night').toFixed(1)],
+              ['Inst Hrs',     sum(grp,'inst').toFixed(1)],
+              ['NVG Hrs',      sum(grp,'nvg').toFixed(1)],
+              ['XC Hrs',       sum(grp,'xc').toFixed(1)],
+              ['Other',        sum(grp,'other').toFixed(1)],
+              ['Entries',      grp.length],
+            ].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid ${color}18">
+              <span style="font-size:10px;color:var(--text-muted)">${l}</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:${color}">${v}</span>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+}
+
+function sr(label, val) {
+  return `<div class="stat-row"><span class="stat-label">${label}</span><span class="stat-val">${val}</span></div>`;
+}
+function sum(arr, key) { return arr.reduce((a,e)=>a+(parseFloat(e[key])||0),0); }
+function sumInt(arr, key) { return Math.round(arr.reduce((a,e)=>a+(parseFloat(e[key])||0),0)); }
+
+// ── TABLE ──
+const COLS = FIELDS;
+
+function getFilteredEntries() {
+  let data = filterMds ? entries.filter(e=>e.mds===filterMds) : entries;
+  const q = (document.getElementById('search-input')?.value||'').toLowerCase();
+  if(q) data = data.filter(e => FIELDS.some(f=>String(e[f.key]||'').toLowerCase().includes(q)));
+  data = [...data].sort((a,b)=>{
+    let av=a[sortCol]??'', bv=b[sortCol]??'';
+    if(!isNaN(parseFloat(av))&&!isNaN(parseFloat(bv))) { av=parseFloat(av);bv=parseFloat(bv); }
+    return av<bv?-sortDir:av>bv?sortDir:0;
+  });
+  return data;
+}
+
+function renderTable() {
+  rebuildMdsTabs();
+  const data = getFilteredEntries();
+  const isEmpty = data.length === 0;
+  document.getElementById('empty-state').style.display = isEmpty ? 'flex' : 'none';
+  document.getElementById('log-table').style.display = isEmpty ? 'none' : 'table';
+  if(!isEmpty) {
+    renderTableHeader();
+    renderTableBody(data);
+  }
+  updateSelectionUI();
+  // header stats always
+  const allE = entries;
+  document.getElementById('h-total-hrs').textContent = sum(allE,'total').toFixed(1);
+  document.getElementById('h-sorties').textContent = sum(allE,'sor');
+  document.getElementById('h-entries').textContent = allE.length;
+}
+
+function renderTableHeader() {
+  const tr = document.getElementById('table-header');
+  tr.innerHTML = `<th><input type="checkbox" class="cb" id="select-all-cb" onchange="toggleSelectAll(this.checked)"></th>`;
+  COLS.forEach(f => {
+    const dir = sortCol===f.key ? (sortDir>0?'▲':'▼') : '';
+    tr.innerHTML += `<th class="${sortCol===f.key?'sorted':''}" onclick="sortBy('${f.key}')">${f.label} ${dir}</th>`;
+  });
+  tr.innerHTML += `<th>ACTIONS</th>`;
+}
+
+function renderTableBody(data) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  data.forEach(e => {
+    const sel = selectedIds.has(e.id);
+    const tr = document.createElement('tr');
+    tr.className = sel ? 'selected' : '';
+    tr.id = 'row-'+e.id;
+    let cells = `<td><input type="checkbox" class="cb" ${sel?'checked':''} onchange="toggleRow(${e.id},this.checked)" onclick="event.stopPropagation()"></td>`;
+    COLS.forEach(f => {
+      let val = e[f.key];
+      if(val===undefined||val===null||val==='') val = f.type==='number'?'0':'–';
+      let cls = 'col-default';
+      if(f.key==='date') cls='col-date';
+      else if(f.key==='mds') cls='col-mds';
+      else if(['dep','arr'].includes(f.key)) cls='col-icao';
+      else if(f.type==='number') cls = (parseFloat(val)||0)===0?'col-zero':'col-hrs';
+      if(f.key==='mds' && val!='–') {
+        const mdsList=[...new Set(entries.map(e=>e.mds).filter(Boolean))].sort();
+        const ci=mdsList.indexOf(val);
+        const color=MDS_COLORS[ci%MDS_COLORS.length];
+        cells+=`<td><span class="mds-chip" style="background:${color}22;color:${color};border:1px solid ${color}44">${val}</span></td>`;
+      } else {
+        cells+=`<td class="${cls}">${val}</td>`;
+      }
+    });
+    cells+=`<td style="white-space:nowrap">
+      <button class="icon-btn" style="padding:3px 8px;font-size:10px" onclick="event.stopPropagation();openEditModal(${e.id})">✎</button>
+      <button class="icon-btn danger" style="padding:3px 8px;font-size:10px;margin-left:3px" onclick="event.stopPropagation();confirmDeleteOne(${e.id})">✕</button>
+    </td>`;
+    tr.innerHTML = cells;
+    tr.onclick = () => toggleRow(e.id, !selectedIds.has(e.id));
+    tbody.appendChild(tr);
+  });
+}
+
+function sortBy(key) {
+  if(sortCol===key) sortDir*=-1; else { sortCol=key; sortDir=1; }
+  renderTable();
+}
+
+// ── SELECTION ──
+function toggleRow(id, checked) {
+  if(checked) selectedIds.add(id); else selectedIds.delete(id);
+  const row = document.getElementById('row-'+id);
+  if(row) { row.className = checked?'selected':''; row.querySelector('.cb').checked=checked; }
+  updateSelectionUI();
+}
+
+function toggleSelectAll(checked) {
+  const data = getFilteredEntries();
+  data.forEach(e => {
+    if(checked) selectedIds.add(e.id); else selectedIds.delete(e.id);
+  });
+  renderTableBody(data);
+  updateSelectionUI();
+}
+
+function selectAllVisible() {
+  getFilteredEntries().forEach(e=>selectedIds.add(e.id));
+  renderTable();
+}
+function clearSelection() { selectedIds.clear(); renderTable(); }
+
+function updateSelectionUI() {
+  const n = selectedIds.size;
+  document.getElementById('selected-count').textContent = `${n} selected`;
+  document.getElementById('edit-btn').style.display = n===1?'':'none';
+  document.getElementById('del-btn').style.display = n>0?'':'none';
+}
+
+// ── FORM ──
+const GROUPS = {
+  flight:    'FLIGHT INFO',
+  hours:     'HOURS',
+  specialty: 'SPECIALTY HOURS',
+  route:     'ROUTE',
+};
+
+function buildForm(data={}) {
+  const form = document.getElementById('entry-form');
+  form.innerHTML = '';
+  let lastGroup = null;
+  FIELDS.forEach(f => {
+    if(f.group !== lastGroup) {
+      form.innerHTML += `<div class="form-section-title">${GROUPS[f.group]}</div>`;
+      lastGroup = f.group;
+    }
+    const val = data[f.key]!==undefined ? data[f.key] : f.default;
+    let span = '';
+    if(['dep','arr','xc'].includes(f.key)) span='';
+    form.innerHTML += `
+      <div class="form-group">
+        <label class="form-label">${f.label}</label>
+        <input class="form-input" type="${f.type==='number'?'number':'text'}"
+          ${f.type==='number'?'step="0.1" min="0"':''}
+          ${f.type==='date'?'':''}
+          id="f-${f.key}" value="${val}" placeholder="${f.type==='number'?'0':''}">
+      </div>`;
+  });
+}
+
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'ADD FLIGHT ENTRY';
+  buildForm();
+  openModal('entry-modal');
+}
+
+function openEditModal(id) {
+  editingId = id;
+  const e = entries.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById('modal-title').textContent = 'EDIT FLIGHT ENTRY';
+  buildForm(e);
+  openModal('entry-modal');
+}
+
+function editSelected() {
+  if(selectedIds.size===1) openEditModal([...selectedIds][0]);
+}
+
+function saveEntry() {
+  const data = { id: editingId || newId() };
+  FIELDS.forEach(f => {
+    const el = document.getElementById('f-'+f.key);
+    if(!el) return;
+    data[f.key] = f.type==='number' ? parseFloat(el.value)||0 : el.value.trim();
+  });
+  if(editingId) {
+    const idx = entries.findIndex(e=>e.id===editingId);
+    if(idx>=0) entries[idx]=data;
+  } else {
+    entries.push(data);
+  }
+  localSave();
+  upsertEntry(data);
+  closeModal('entry-modal');
+  if(currentTab==='summary') renderSummary(); else renderTable();
+  notify(editingId?'Entry updated':'Entry added');
+}
+
+// ── DELETE ──
+function confirmDeleteOne(id) {
+  showConfirm(`Delete this flight entry? This cannot be undone.`, () => {
+    entries = entries.filter(e=>e.id!==id);
+    selectedIds.delete(id);
+    localSave();
+    deleteEntries([id]);
+    if(currentTab==='summary') renderSummary(); else renderTable();
+    notify('Entry deleted', 'warn');
+  });
+}
+
+function deleteSelected() {
+  const n = selectedIds.size;
+  showConfirm(`Delete ${n} selected entr${n===1?'y':'ies'}? This cannot be undone.`, () => {
+    const deletedIds = [...selectedIds];
+    entries = entries.filter(e=>!selectedIds.has(e.id));
+    selectedIds.clear();
+    localSave();
+    deleteEntries(deletedIds);
+    if(currentTab==='summary') renderSummary(); else renderTable();
+    notify(`${n} entr${n===1?'y':'ies'} deleted`, 'warn');
+  });
+}
+
+function showConfirm(msg, cb) {
+  document.getElementById('confirm-msg').textContent = msg;
+  const btn = document.getElementById('confirm-ok-btn');
+  btn.onclick = () => { closeModal('confirm-modal'); cb(); };
+  openModal('confirm-modal');
+}
+
+// ── IMPORT ──
+function openImportModal() {
+  // Reset state
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-btn').style.display = 'none';
+  document.getElementById('import-status').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  importRows = []; importHeaders = [];
+  openModal('import-modal');
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  document.getElementById('import-drop').classList.add('drag');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  document.getElementById('import-drop').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if(file) processImportFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if(file) processImportFile(file);
+}
+
+function setImportStatus(msg, color) {
+  const el = document.getElementById('import-status');
+  el.textContent = msg;
+  el.style.color = color || 'var(--accent-cyan)';
+  el.style.display = 'block';
+}
+
+function processImportFile(file) {
+  setImportStatus('Reading file...', 'var(--accent-cyan)');
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-btn').style.display = 'none';
+
+  var ext = file.name.split('.').pop().toLowerCase();
+
+  // CSV: pure native, no library needed
+  if(ext === 'csv') {
+    var reader = new FileReader();
+    reader.onerror = function(){ setImportStatus('Failed to read CSV.', 'var(--accent-red)'); };
+    reader.onload = function(ev) {
+      try {
+        var rows = parseCSV(ev.target.result);
+        if(!rows || rows.length < 2) { setImportStatus('CSV appears empty.', 'var(--accent-red)'); return; }
+        importHeaders = rows[0].map(function(c){ return String(c||'').trim(); });
+        importRows = rows.slice(1).filter(function(r){ return r.some(function(c){ return String(c||'').trim() !== ''; }); });
+        if(!importRows.length) { setImportStatus('No data rows found in CSV.', 'var(--accent-red)'); return; }
+        setImportStatus('\u2713 ' + file.name + ' \u2014 ' + importRows.length + ' rows detected', 'var(--accent-green)');
+        buildColMapper();
+        document.getElementById('import-preview').style.display = 'block';
+        document.getElementById('import-row-count').textContent = importRows.length + ' data rows ready to import';
+        document.getElementById('import-btn').style.display = '';
+      } catch(err) { setImportStatus('CSV parse error: ' + err.message, 'var(--accent-red)'); }
+    };
+    reader.readAsText(file);
+    return;
+  }
+
+  // XLSX/XLS: requires XLSX library from CDN
+  if(typeof XLSX === 'undefined') {
+    setImportStatus(
+      'XLSX library failed to load from CDN. Please check your internet connection and refresh, or export your file as CSV and import that instead.',
+      'var(--accent-red)'
+    );
+    return;
+  }
+
+  var reader = new FileReader();
+  reader.onerror = function(){ setImportStatus('Could not read the file.', 'var(--accent-red)'); };
+  reader.onload = function(ev) {
+    try {
+      var data = new Uint8Array(ev.target.result);
+      var wb = XLSX.read(data, {type:'array', cellDates:true, cellNF:false, cellHTML:false});
+      if(!wb || !wb.SheetNames || !wb.SheetNames.length) {
+        setImportStatus('No sheets found in workbook.', 'var(--accent-red)'); return;
+      }
+      // Pick the sheet with the most non-null data rows (ignores pre-allocated empty sheets)
+      var bestSheet = wb.SheetNames[0];
+      var bestDataCount = 0;
+      wb.SheetNames.forEach(function(name) {
+        var testWs = wb.Sheets[name];
+        var testJson = XLSX.utils.sheet_to_json(testWs, {header:1, raw:true, defval:null});
+        // Count rows that have at least one non-null value (skip header row 0)
+        var dataCount = 0;
+        for(var ri = 1; ri < testJson.length; ri++) {
+          if(testJson[ri] && testJson[ri].some(function(c){ return c !== null && c !== undefined && String(c).trim() !== ''; })) {
+            dataCount++;
+          }
+        }
+        console.log('Sheet "' + name + '": ' + dataCount + ' real data rows');
+        if(dataCount > bestDataCount) {
+          bestDataCount = dataCount;
+          bestSheet = name;
+        }
+      });
+      console.log('Selected sheet:', bestSheet, 'with', bestDataCount, 'data rows');
+
+      if(bestDataCount === 0) {
+        // Show sheet picker so user can choose manually
+        var sheetList = wb.SheetNames.join(', ');
+        setImportStatus('All sheets appear empty. Sheets found: ' + sheetList + '. Try saving your data sheet as CSV and importing that.', 'var(--accent-red)');
+        return;
+      }
+
+      var ws = wb.Sheets[bestSheet];
+      var json = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+      if(!json || json.length < 2) {
+        setImportStatus('File appears empty (fewer than 2 rows).', 'var(--accent-red)'); return;
+      }
+      var headerRowIdx = -1;
+      for(var i=0;i<json.length;i++){
+        if(json[i] && json[i].some(function(c){ return String(c).trim() !== ''; })){
+          headerRowIdx = i; break;
+        }
+      }
+      if(headerRowIdx === -1) { setImportStatus('No header row found.', 'var(--accent-red)'); return; }
+      importHeaders = json[headerRowIdx].map(function(c){ return c !== null && c !== undefined ? String(c).trim() : ''; });
+      // Debug: show which row was picked as header and what it contains
+      console.log('Header row index:', headerRowIdx, 'Headers:', JSON.stringify(importHeaders));
+      console.log('Total rows in sheet:', json.length);
+      // Log first 5 rows after header
+      for(var di=0; di<Math.min(5, json.length - headerRowIdx - 1); di++){
+        console.log('Data row', di, ':', JSON.stringify(json[headerRowIdx+1+di]));
+      }
+      var allDataRows = json.slice(headerRowIdx+1);
+      importRows = allDataRows.filter(function(r){
+        return r && r.some(function(c){ return c !== null && c !== undefined && String(c).trim() !== ''; });
+      });
+      if(!importRows.length) {
+        var sample = allDataRows.slice(0,3).map(function(r){ return JSON.stringify(r); }).join(' | ');
+        setImportStatus('No data rows found after header. Raw sample: ' + (sample||'(nothing)'), 'var(--accent-red)');
+        return;
+      }
+      setImportStatus('\u2713 ' + file.name + ' \u2014 ' + importRows.length + ' rows detected', 'var(--accent-green)');
+      buildColMapper();
+      document.getElementById('import-preview').style.display = 'block';
+      document.getElementById('import-row-count').textContent = importRows.length + ' data rows ready to import';
+      document.getElementById('import-btn').style.display = '';
+    } catch(err) {
+      setImportStatus('Error parsing .xlsx: ' + err.message, 'var(--accent-red)');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Lightweight RFC-4180 CSV parser
+function parseCSV(text) {
+  var rows = [], row = [], field = '', inQ = false;
+  for(var i=0; i<text.length; i++) {
+    var ch = text[i], nx = text[i+1];
+    if(inQ) {
+      if(ch==='"' && nx==='"'){ field+='"'; i++; }
+      else if(ch==='"'){ inQ=false; }
+      else { field+=ch; }
+    } else {
+      if(ch==='"'){ inQ=true; }
+      else if(ch===','){ row.push(field.trim()); field=''; }
+      else if(ch==='\n'||(ch==='\r'&&nx==='\n')){
+        if(ch==='\r') i++;
+        row.push(field.trim()); rows.push(row); row=[]; field='';
+      } else { field+=ch; }
+    }
+  }
+  if(field||row.length){ row.push(field.trim()); if(row.some(function(c){return c;})) rows.push(row); }
+  return rows;
+}
+
+function buildColMapper() {
+  const grid = document.getElementById('col-map-grid');
+  grid.innerHTML = '';
+
+  // All known aliases for each field key (lowercase, no spaces/symbols)
+  const ALIASES = {
+    date:   ['date','timestamp','flightdate','date'],
+    mds:    ['mds','aircraft','aircrafttype','type','actype'],
+    tail:   ['tail','tailid','tailnumber','aircrafttail','tailno','acnumber','acno','acid','tail#'],
+    prim:   ['primaryhours','prihours','primary','pilottime','pic','pilot'],
+    sor:    ['sorties','sortie','sorites','sortes','numsorties','totalsorties','sor'],
+    sec:    ['secondaryhours','secondary','sic','copilot','copilothours'],
+    instr:  ['instructorhours','instructor','ip','iphours','instructortime'],
+    eval:   ['evaluatorhours','evaluator','ep','ephours','evaluatortime'],
+    other:  ['otherhours','other'],
+    total:  ['totalhours','total','totflthrs','tothours','flighthours','totaltime'],
+    combat: ['combathours','combattime','combat'],
+    cbtsor: ['combatsorties','combatsor'],
+    cstime: ['combatsupporthours','combatsupporttime','combatsupport','cstime','cst'],
+    cssor:  ['combatsupportsorties','cssorties','cssor'],
+    night:  ['nighthours','nighttime','night','nt'],
+    inst:   ['instrumenthours','instrumenttime','instrument','sim','actualhours','actual','imc'],
+    nvg:    ['nightvisiongogglehours','nightvisiongoggles','nvgtime','nvghours','nvg','nods'],
+    dep:    ['depicao','dep','departure','departureicao','origin','from'],
+    arr:    ['arricao','arr','arrival','arrivalicao','destination','to'],
+    xc:     ['xchours','xctime','xc','crosscountry','crosscountryhours'],
+  };
+
+  function normalize(s) {
+    return String(s||'').toLowerCase().replace(/[\s_\-()/]/g,'');
+  }
+
+  FIELDS.forEach(f => {
+    const normLabel = normalize(f.label);
+    const normKey   = normalize(f.key);
+    const aliases   = (ALIASES[f.key] || []);
+    let autoIdx = -1;
+
+    // Priority 1: exact alias match
+    autoIdx = importHeaders.findIndex(h => aliases.includes(normalize(h)));
+    // Priority 2: exact label match
+    if(autoIdx === -1) autoIdx = importHeaders.findIndex(h => normalize(h) === normLabel);
+    // Priority 3: exact key match
+    if(autoIdx === -1) autoIdx = importHeaders.findIndex(h => normalize(h) === normKey);
+    // Priority 4: header contains full label
+    if(autoIdx === -1) autoIdx = importHeaders.findIndex(h => normalize(h).includes(normLabel) && normLabel.length > 2);
+    // Priority 5: label contains header
+    if(autoIdx === -1) autoIdx = importHeaders.findIndex(h => normLabel.includes(normalize(h)) && normalize(h).length > 2);
+    // Priority 6: any alias is contained in header or vice versa
+    if(autoIdx === -1) {
+      autoIdx = importHeaders.findIndex(h => {
+        const nh = normalize(h);
+        return aliases.some(a => nh.includes(a) || a.includes(nh));
+      });
+    }
+
+    const options = '<option value="">-- skip --</option>' +
+      importHeaders.map((h,i) => `<option value="${i}"${i===autoIdx?' selected':''}>${h||'(blank col '+i+')'}</option>`).join('');
+
+    const matched = autoIdx !== -1 ? ' style="border-color:var(--accent-green)"' : '';
+    grid.innerHTML += `<div class="col-map-row">
+      <span class="col-map-label" title="${f.label}">${f.label}</span>
+      <select class="form-input" id="map-${f.key}" style="font-size:10px;padding:4px 6px"${matched}>${options}</select>
+    </div>`;
+  });
+}
+
+function doImport() {
+  let added = 0, skipped = 0;
+  importRows.forEach(row => {
+    const e = { id: newId() };
+    let hasData = false;
+
+    FIELDS.forEach(f => {
+      const sel = document.getElementById('map-'+f.key);
+      if(!sel || sel.value === '') { e[f.key] = f.default; return; }
+      const colIdx = parseInt(sel.value);
+      let raw = (colIdx < row.length) ? row[colIdx] : null;
+
+      // Convert Excel date serial numbers (e.g. 45291) to YYYY-MM-DD
+      if(f.key === 'date') {
+        if(typeof raw === 'number') {
+          // Excel serial: days since 1899-12-30
+          const d = new Date(Math.round((raw - 25569) * 86400 * 1000));
+          const yr = d.getUTCFullYear();
+          const mo = String(d.getUTCMonth()+1).padStart(2,'0');
+          const dy = String(d.getUTCDate()).padStart(2,'0');
+          raw = yr + '-' + mo + '-' + dy;
+        } else if(raw && typeof raw === 'string') {
+          // Handle MM/DD/YYYY or DD/MM/YYYY
+          const m = raw.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+          if(m) {
+            const yr = m[3].length===2 ? '20'+m[3] : m[3];
+            raw = yr + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
+          }
+        } else if(raw instanceof Date) {
+          const yr = raw.getUTCFullYear();
+          const mo = String(raw.getUTCMonth()+1).padStart(2,'0');
+          const dy = String(raw.getUTCDate()).padStart(2,'0');
+          raw = yr + '-' + mo + '-' + dy;
+        }
+      }
+
+      // Normalise to string for the empty check
+      const strVal = (raw === null || raw === undefined) ? '' : String(raw).trim();
+      if(strVal !== '') hasData = true;
+
+      if(f.type === 'number') {
+        e[f.key] = parseFloat(String(raw||'').replace(/,/g,'')) || 0;
+      } else {
+        e[f.key] = strVal;
+      }
+    });
+
+    if(hasData) { entries.push(e); added++; } else { skipped++; }
+  });
+
+  localSave();
+  closeModal('import-modal');
+  rebuildMdsTabs();
+  if(currentTab === 'summary') renderSummary(); else renderTable();
+  notify(`Imported ${added} entr${added===1?'y':'ies'}${skipped?' ('+skipped+' blank rows skipped)':''} — syncing...`);
+  document.getElementById('file-input').value = '';
+  importRows = []; importHeaders = [];
+  pushAllToSupabase();
+}
+
+// ── EXPORT ──
+function exportExcel() {
+  const data = filterMds ? entries.filter(e=>e.mds===filterMds) : entries;
+  if(!data.length) { notify('No data to export','warn'); return; }
+  const wb = XLSX.utils.book_new();
+  const header = FIELDS.map(f=>f.label);
+  const rows = data.map(e=>FIELDS.map(f=>e[f.key]??f.default));
+  const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
+  // column widths
+  ws['!cols'] = FIELDS.map(f=>({wch:Math.max(f.label.length+2,12)}));
+  XLSX.utils.book_append_sheet(wb, ws, filterMds||'Master Log');
+  if(!filterMds) {
+    const mdsList=[...new Set(entries.map(e=>e.mds).filter(Boolean))].sort();
+    mdsList.forEach(mds=>{
+      const mRows=entries.filter(e=>e.mds===mds).map(e=>FIELDS.map(f=>e[f.key]??f.default));
+      const mWs=XLSX.utils.aoa_to_sheet([header,...mRows]);
+      mWs['!cols']=FIELDS.map(f=>({wch:Math.max(f.label.length+2,12)}));
+      XLSX.utils.book_append_sheet(wb,mWs,mds.substring(0,31));
+    });
+  }
+  XLSX.writeFile(wb, `FlightLog_${new Date().toISOString().slice(0,10)}.xlsx`);
+  notify('Export complete');
+}
+
+// ── MODAL HELPERS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
+});
+
+// ── NOTIFICATIONS ──
+let notifTimer;
+function notify(msg, type='') {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = 'notif show' + (type?' '+type:'');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ── SERVICE WORKER (PWA) ──
+if('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ── INIT ──
+initSupabase();
+setSyncStatus('syncing');
+loadData().then(() => {
+  renderSummary();
+});
+</script>
+</body>
+</html>
